@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Student Register</title>
+
+    <link rel="stylesheet" href="myhtml.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>STUDENT REGISTER</h1>
+
+        <p>Click the button to get student details.</p>
+
+        <!-- Buttons -->
+        <div class="actions-bar">
+
+            <button id="loadBtn" type="button">
+                CLICK HERE!
+            </button>
+
+            <button id="openModalBtn" type="button">
+                ADD STUDENT
+            </button>
+
+        </div>
+
+
+        <!-- Student Form -->
+        <div id="studentModal" class="modal">
+
+            <div class="modal-content">
+
+                <h2 id="modalTitle">Add New Student</h2>
+
+                <span id="closeModalBtn" class="close-btn">
+                    &times;
+                </span>
+
+
+                <form id="studentForm">
+
+                    <!-- Student ID -->
+                    <input type="hidden" id="studentId">
+
+
+                    <!-- Name -->
+                    <div class="form-group">
+
+                        <label for="studentName">Name</label>
+
+                        <input
+                            type="text"
+                            id="studentName"
+                            placeholder="Enter name"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Age -->
+                    <div class="form-group">
+
+                        <label for="studentAge">Age</label>
+
+                        <input
+                            type="number"
+                            id="studentAge"
+                            placeholder="Enter age"
+                            min="1"
+                            max="150"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Email -->
+                    <div class="form-group">
+
+                        <label for="studentEmail">Email</label>
+
+                        <input
+                            type="email"
+                            id="studentEmail"
+                            placeholder="Enter email"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Course -->
+                    <div class="form-group">
+
+                        <label for="studentCourse">Course</label>
+
+                        <input
+                            type="text"
+                            id="studentCourse"
+                            placeholder="Enter course"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- City -->
+                    <div class="form-group">
+
+                        <label for="studentCity">City</label>
+
+                        <input
+                            type="text"
+                            id="studentCity"
+                            placeholder="Enter city"
+                            required
+                        >
+
+                    </div>
+
+
+                    <button id="createBtn" type="submit">
+                        SUBMIT
+                    </button>
+
+                </form>
+
+
+                <p id="statusMsg"></p>
+
+            </div>
+
+        </div>
+
+
+        <!-- Student Table -->
+        <table id="studentTable" border="1" style="display: none;">
+
+            <thead>
+
+                <tr>
+                    <th>No.</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Email</th>
+                    <th>Course</th>
+                    <th>City</th>
+                    <th>Action</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody id="studentRows">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
