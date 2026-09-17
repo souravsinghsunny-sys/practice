@@ -14,11 +14,7 @@ const submitButton = document.getElementById("createBtn");
 const statusMessage = document.getElementById("statusMsg");
 
 let students = [];
-
-
-
-
-
+//i habveisdhh
 
 // GET STUDENTS
 
