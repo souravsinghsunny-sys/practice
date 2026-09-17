@@ -16,6 +16,7 @@ const statusMessage = document.getElementById("statusMsg");
 let students = [];
 
 
+
 // GET STUDENTS
 
 function loadStudents() {
