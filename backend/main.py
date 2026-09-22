@@ -115,5 +115,7 @@ def delete_student(student_id: int):
         connection.commit()
 
     return {"message": "Student deleted successfully"}
-
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
 
