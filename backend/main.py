@@ -1,11 +1,19 @@
 
+import boto3
+from fastapi import UploadFile, File
 from sqlalchemy import create_engine
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+
 DATABASE_URL = "mysql+pymysql://root:password123@localhost:3306/sourav"
 engine = create_engine(DATABASE_URL)
 app = FastAPI()
+
+# S3 connection
+s3 = boto3.client("s3")
+
+BUCKET_NAME = "s3-replication-source-2026-sourav"
 
 print("Database connection initialized.")
 
@@ -118,6 +126,20 @@ def delete_student(student_id: int):
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    s3.upload_fileobj(
+        file.file,
+        BUCKET_NAME,
+        file.filename
+    )
+
+    return {
+        "message": "File uploaded successfully",
+        "filename": file.filename
+    }
 
 
 
