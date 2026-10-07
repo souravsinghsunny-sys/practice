@@ -141,6 +141,25 @@ async def upload_file(file: UploadFile = File(...)):
         "filename": file.filename
     }
 
+from fastapi.responses import StreamingResponse
+from io import BytesIO
+
+@app.get("/download/{filename}")
+async def download_file(filename: str):
+    response = s3.get_object(
+        Bucket=BUCKET_NAME,
+        Key=filename
+    )
+
+    file_data = response["Body"].read()
+
+    return StreamingResponse(
+        BytesIO(file_data),
+        media_type=response["ContentType"],
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+    )
 
 
 
