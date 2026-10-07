@@ -127,18 +127,29 @@ def delete_student(student_id: int):
 def health():
     return {"status": "healthy"}
 
-
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
+    # Upload file to S3
     s3.upload_fileobj(
         file.file,
         BUCKET_NAME,
         file.filename
     )
 
+    # Create a temporary presigned URL
+    download_url = s3.generate_presigned_url(
+        "get_object",
+        Params={
+            "Bucket": BUCKET_NAME,
+            "Key": file.filename
+        },
+        ExpiresIn=3600
+    )
+
     return {
         "message": "File uploaded successfully",
-        "filename": file.filename
+        "filename": file.filename,
+        "download_url": download_url
     }
 
 from fastapi.responses import StreamingResponse
