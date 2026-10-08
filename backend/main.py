@@ -141,7 +141,8 @@ async def upload_file(file: UploadFile = File(...)):
         "get_object",
         Params={
             "Bucket": BUCKET_NAME,
-            "Key": file.filename
+            "Key": file.filename,
+            "ResponseContentDisposition": "inline"
         },
         ExpiresIn=3600
     )
