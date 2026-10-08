@@ -10,8 +10,12 @@ DATABASE_URL = "mysql+pymysql://root:password123@localhost:3306/sourav"
 engine = create_engine(DATABASE_URL)
 app = FastAPI()
 
-# S3 connection
-s3 = boto3.client("s3")
+from botocore.config import Config
+
+s3 = boto3.client(
+    "s3",
+    config=Config(signature_version="s3v4")
+)
 
 BUCKET_NAME = "s3-replication-source-2026-sourav"
 
