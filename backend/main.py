@@ -1,24 +1,29 @@
 
+import os
 import boto3
-from fastapi import UploadFile, File
-from sqlalchemy import create_engine
-from fastapi import FastAPI
+from botocore.config import Config
+from botocore.exceptions import NoCredentialsError, ClientError
+from dotenv import load_dotenv
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 
-DATABASE_URL = "mysql+pymysql://root:password123@localhost:3306/sourav"
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:password123@localhost:3306/sourav")
 engine = create_engine(DATABASE_URL)
 app = FastAPI()
 
-from botocore.config import Config
+BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "s3-replication-source-2026-sourav")
+AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
 
 s3 = boto3.client(
     "s3",
-    region_name="ap-south-1",
+    region_name=AWS_REGION,
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     config=Config(signature_version="s3v4")
 )
-
-BUCKET_NAME = "s3-replication-source-2026-sourav"
 
 print("Database connection initialized.")
 
@@ -134,59 +139,65 @@ def health():
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    # Upload file to S3
-    s3.upload_fileobj(
-        file.file,
-        BUCKET_NAME,
-        file.filename
-    )
+    try:
+        # Upload file to S3
+        s3.upload_fileobj(
+            file.file,
+            BUCKET_NAME,
+            file.filename
+        )
 
-    # Create a temporary presigned URL
-    download_url = s3.generate_presigned_url(
-        "get_object",
-        Params={
-            "Bucket": BUCKET_NAME,
-            "Key": file.filename,
-            "ResponseContentDisposition": "inline"
-        },
-        ExpiresIn=3600
-    )
+        # Create a temporary presigned URL
+        download_url = s3.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": BUCKET_NAME,
+                "Key": file.filename,
+                "ResponseContentDisposition": "inline"
+            },
+            ExpiresIn=3600
+        )
 
-    return {
-        "message": "File uploaded successfully",
-        "filename": file.filename,
-        "download_url": download_url
-    }
-
-from fastapi.responses import StreamingResponse
-from io import BytesIO
+        return {
+            "message": "File uploaded successfully",
+            "filename": file.filename,
+            "download_url": download_url
+        }
+    except NoCredentialsError:
+        raise HTTPException(
+            status_code=500,
+            detail="AWS credentials not found. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in your .env file."
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Upload failed: {str(e)}"
+        )
 
 @app.get("/download/{filename}")
 async def download_file(filename: str):
+    try:
+        download_url = s3.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": BUCKET_NAME,
+                "Key": filename,
+                "ResponseContentDisposition": "inline"
+            },
+            ExpiresIn=3600
+        )
 
-    download_url = s3.generate_presigned_url(
-        "get_object",
-        Params={
-            "Bucket": BUCKET_NAME,
-            "Key": filename,
-            "ResponseContentDisposition": "inline"
-        },
-        ExpiresIn=3600
-    )
-
-    return {
-        "filename": filename,
-        "download_url": download_url
-    }
-
-
-
-
-
-
-
-
-
-
-
-
+        return {
+            "filename": filename,
+            "download_url": download_url
+        }
+    except NoCredentialsError:
+        raise HTTPException(
+            status_code=500,
+            detail="AWS credentials not found. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in your .env file."
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate presigned URL: {str(e)}"
+        )
