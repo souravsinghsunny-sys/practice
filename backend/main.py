@@ -163,21 +163,21 @@ from io import BytesIO
 
 @app.get("/download/{filename}")
 async def download_file(filename: str):
-    response = s3.get_object(
-        Bucket=BUCKET_NAME,
-        Key=filename
+
+    download_url = s3.generate_presigned_url(
+        "get_object",
+        Params={
+            "Bucket": BUCKET_NAME,
+            "Key": filename,
+            "ResponseContentDisposition": "inline"
+        },
+        ExpiresIn=3600
     )
 
-    file_data = response["Body"].read()
-
-    return StreamingResponse(
-        BytesIO(file_data),
-        media_type=response["ContentType"],
-        headers={
-            "Content-Disposition": f'attachment; filename="{filename}"'
-        }
-    )
-
+    return {
+        "filename": filename,
+        "download_url": download_url
+    }
 
 
 
