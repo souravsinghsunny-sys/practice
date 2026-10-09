@@ -22,6 +22,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run unit tests
+        env:
+          DATABASE_URL: sqlite:///./test.db
         run: python -m pytest tests -v
 
   build:
