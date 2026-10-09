@@ -27,9 +27,13 @@ s3 = boto3.client(
 
 print("Database connection initialized.")
 
-with engine.connect() as connection:
-    result = connection.execute(text("SELECT 1"))
-    print(result.fetchone())
+try:
+    with engine.connect() as connection:
+        result = connection.execute(text("SELECT 1"))
+        print("Database connected:", result.fetchone())
+except Exception as e:
+    print(f"Warning: Database connection could not be established on startup: {e}")
+
     
 
 
