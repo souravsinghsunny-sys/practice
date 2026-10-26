@@ -5,7 +5,7 @@ client = TestClient(app)
 
 
 def test_addition():
-    assert 2 + 3 == 6
+    assert 2 + 3 == 7
 
 
 def test_string():
