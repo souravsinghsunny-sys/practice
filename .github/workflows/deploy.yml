@@ -1,0 +1,109 @@
+name: Deploy FastAPI to EC2
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test FastAPI routes
+        run: |
+          python - <<'PY'
+          import ast
+
+          with open("backend/main.py") as f:
+              tree = ast.parse(f.read())
+
+          routes = []
+          for node in ast.walk(tree):
+              for decorator in getattr(node, "decorator_list", []):
+                  if isinstance(decorator, ast.Call):
+                      func = decorator.func
+                      if isinstance(func, ast.Attribute):
+                          if decorator.args and isinstance(decorator.args[0], ast.Constant):
+                              routes.append((func.attr, decorator.args[0].value))
+
+          required = [
+              ("get", "/health"),
+              ("get", "/students/"),
+              ("post", "/students/"),
+              ("post", "/upload"),
+          ]
+
+          for route in required:
+              assert route in routes, f"Missing route: {route}"
+
+          print("FastAPI route checks passed")
+          PY
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check Python syntax
+        run: |
+          python -m compileall -q backend/main.py app2/main.py
+          echo "Python syntax check passed"
+
+  deploy:
+    name: deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Add EC2 to known hosts
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy application
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          ssh "$EC2_USER@$EC2_HOST" '
+            set -e
+            cd /home/ubuntu/practice
+            export GIT_SSH_COMMAND="ssh -i /home/ubuntu/.ssh/github_actions_final -o IdentitiesOnly=yes"
+            git fetch origin main
+            git reset --hard origin/main
+            sudo systemctl restart fastapi
+            sleep 3
+            sudo systemctl is-active fastapi
+          '
